@@ -1,0 +1,1 @@
+[![CircleCI](https://circleci.com/gh/bbucko/rusted_aoc.svg?style=svg)](https://circleci.com/gh/bbucko/rusted_aoc)
