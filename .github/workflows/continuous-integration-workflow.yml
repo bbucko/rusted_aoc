@@ -7,4 +7,11 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: stable
       - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+      - name: Run tests
+        run: cargo test
