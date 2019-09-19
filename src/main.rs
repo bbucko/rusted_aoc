@@ -20,6 +20,7 @@ fn main() -> std::io::Result<()> {
     let mut emp_id = 0;
     let mut start = 0;
     let mut slept_for = HashMap::new();
+    let mut slept_count_by_emp_and_minutes = HashMap::new();
 
     for (time, msg) in &events {
         if msg.starts_with("Guard #") {
@@ -31,17 +32,27 @@ fn main() -> std::io::Result<()> {
         } else if msg.starts_with("falls asleep") {
             start = time.timestamp_millis();
         } else if msg.starts_with("wakes up") {
-            let duration = (time.timestamp_millis() - start) / 1000 / 60;
-            println!("Guard #{} wakes up. He slept for: {} mins", emp_id, duration);
-            let slept_for_entry = slept_for.entry(emp_id).or_insert(0);
-            *slept_for_entry += duration;
+            let duration = ((time.timestamp_millis() - start) / 1000 / 60) as u32;
+            let slept_for_by_emp_id = slept_for.entry(emp_id).or_insert(0);
+            *slept_for_by_emp_id += duration;
+
+            let slept_count_by_emp_and_minutes_entry = slept_count_by_emp_and_minutes.entry(emp_id).or_insert([0; 60]);
+            let end_minute = time.minute();
+            let start_minute = end_minute - duration;
+
+            for minute in start_minute..end_minute {
+                slept_count_by_emp_and_minutes_entry[minute as usize] += 1;
+            }
 
             start = 0;
         }
     }
 
-    let slept_longer = slept_for.iter().max_by(|(_, v1), (_, v2)| v1.cmp(v2)).unwrap();
-    println!("{:?}", slept_longer);
+    let slept_longest = slept_for.iter().max_by(|(_, v1), (_, v2)| v1.cmp(v2)).unwrap();
+    let guard_id_who_slept_the_longest = slept_longest.0;
+    let minute_when_he_slept_the_most = slept_count_by_emp_and_minutes[guard_id_who_slept_the_longest].iter().enumerate().max_by_key(|&(_, v)| v).unwrap().0 as i32;
+
+    dbg!(guard_id_who_slept_the_longest * minute_when_he_slept_the_most);
 
     Ok(())
 }
