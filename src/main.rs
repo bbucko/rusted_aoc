@@ -51,8 +51,14 @@ fn main() -> std::io::Result<()> {
     let slept_longest = slept_for.iter().max_by(|(_, v1), (_, v2)| v1.cmp(v2)).unwrap();
     let guard_id_who_slept_the_longest = slept_longest.0;
     let minute_when_he_slept_the_most = slept_count_by_emp_and_minutes[guard_id_who_slept_the_longest].iter().enumerate().max_by_key(|&(_, v)| v).unwrap().0 as i32;
-
     dbg!(guard_id_who_slept_the_longest * minute_when_he_slept_the_most);
+
+    let slept_the_most = slept_count_by_emp_and_minutes.iter().max_by(|(_, sleep_count_per_minute1), (_, sleep_count_per_minute2)| sleep_count_per_minute1.iter().max().unwrap().cmp(sleep_count_per_minute2.iter().max().unwrap())).unwrap();
+
+    let max_minutes_slept = slept_the_most.1.iter().max().unwrap();
+    let slept_the_most_on = slept_the_most.1.iter().position(|x| x == max_minutes_slept).unwrap() as i32;
+    dbg!(slept_the_most.0 * slept_the_most_on);
+
 
     Ok(())
 }
