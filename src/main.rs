@@ -7,12 +7,22 @@ fn main() -> std::io::Result<()> {
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
 
-    let result = contents.chars()
-        .fold(String::new(), fold_polymer);
 
+    let result = "abcdefghijklmnopqrstuvwxyz".chars()
+        .map(|check| react_polymer(contents.clone(), check))
+        .map(|polymer| polymer.len())
+        .min()
+        .unwrap_or(0);
 
-    dbg!(result.len());
+    dbg!(result);
+
     Ok(())
+}
+
+fn react_polymer(contents: String, check: char) -> String {
+    contents.chars()
+        .filter(|a| !check.eq_ignore_ascii_case(a))
+        .fold(String::new(), fold_polymer)
 }
 
 fn fold_polymer(polymer: String, unit: char) -> String {
