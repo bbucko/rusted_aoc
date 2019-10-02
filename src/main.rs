@@ -1,5 +1,12 @@
+#![feature(test)]
+
+extern crate test;
+
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
+
+const SIZE: usize = 400;
 
 fn main() -> std::io::Result<()> {
     let mut file = File::open("input/input.txt")?;
@@ -7,38 +14,77 @@ fn main() -> std::io::Result<()> {
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
 
+    let mut letters = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz".chars();
 
-    let result = "abcdefghijklmnopqrstuvwxyz".chars()
-        .map(|check| react_polymer(contents.clone(), check))
-        .map(|polymer| polymer.len())
-        .min()
-        .unwrap_or(0);
+    let coords: Vec<(char, (i32, i32))> = contents.lines()
+        .map(parse_line)
+        .map(|(x, y)| (letters.next().unwrap(), (x, y)))
+        .collect();
 
-    dbg!(result);
+
+    let mut board = [[(' ', i32::max_value()); SIZE]; SIZE];
+    for (sign, (x, y)) in coords {
+        for (i, row) in board.iter_mut().enumerate() {
+            for (j, cell) in row.iter_mut().enumerate() {
+                let dist = (x - i as i32).abs() + (y - j as i32).abs();
+
+                if dist < cell.1 {
+                    cell.0 = sign;
+                    cell.1 = dist;
+                } else if dist == cell.1 {
+                    cell.0 = '.';
+                }
+            }
+        }
+    }
+
+    for line in board.iter() {
+        for char in line.iter() {
+            print!("{}", char.0);
+        }
+        println!()
+    }
+
+    let mut result = HashMap::new();
+
+    for (i, row) in board.iter_mut().enumerate() {
+        for (j, cell) in row.iter_mut().enumerate() {
+            let count = result.entry(cell.0).or_insert(0);
+
+            if i == 0 || j == 0 || i == SIZE - 1 || j == SIZE - 1 {
+                *count = -1;
+            }
+
+            if *count > -1 {
+                *count += 1;
+            }
+        }
+    }
+
+    println!("Result: {:?}", result.into_iter().max_by_key(|(_, b)| *b).unwrap());
 
     Ok(())
 }
 
-fn react_polymer(contents: String, check: char) -> String {
-    contents.chars()
-        .filter(|a| !check.eq_ignore_ascii_case(a))
-        .fold(String::new(), fold_polymer)
+fn parse_line(line: &str) -> (i32, i32) {
+    single_step_per_map(line)
 }
 
-fn fold_polymer(polymer: String, unit: char) -> String {
-    let last_polymer = polymer.chars().last().unwrap_or_else(|| unit);
-    if units_react(unit, last_polymer) {
-        let (first, _) = polymer.split_at(polymer.len() - 1);
-        return String::from(first);
-    }
-
-    let mut result = String::from(polymer);
-    result.push(unit);
-    result
+fn single_step_per_map(line: &str) -> (i32, i32) {
+    let points: Vec<i32> = line.split(",")
+        .map(|point| point.trim().parse::<i32>().unwrap())
+        .collect();
+    (points[0], points[1])
 }
 
-fn units_react(char_a: char, char_b: char) -> bool {
-    return char_a != char_b && char_a.to_uppercase().eq(char_b.to_uppercase());
+fn multiple_step_per_map(line: &str) -> (i32, i32) {
+    let points: Vec<i32> = line
+        .split(",")
+        .map(|point| point.trim())
+        .map(|point| point.parse::<i32>())
+        .map(|point| point.unwrap())
+        .collect();
+    (points[0], points[1])
 }
 
 #[cfg(test)]
@@ -46,16 +92,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_single_fold() {
-        assert_eq!("aBaa", fold_polymer("aBa".to_string(), 'a'));
-        assert_eq!("aB", fold_polymer("aBa".to_string(), 'A'));
+    fn test_parse_line() {
+        assert_eq!((0, 0), parse_line("0,0"));
+        assert_eq!((1, 2), parse_line("1, 2"));
+        assert_eq!((3, 4), parse_line(" 3 , 4 "));
     }
 
     #[test]
-    fn test_reaction() {
-        assert!(!units_react('a', 'a'));
-        assert!(!units_react('a', 'b'));
+    fn test_me() {}
 
-        assert!(units_react('a', 'A'));
+    #[bench]
+    fn test_single(b: &mut test::Bencher) {
+        b.iter(|| single_step_per_map("0,0"));
+    }
+
+    #[bench]
+    fn test_multi(b: &mut test::Bencher) {
+        b.iter(|| multiple_step_per_map("0,0"));
     }
 }
