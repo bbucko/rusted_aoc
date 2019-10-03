@@ -22,46 +22,39 @@ fn main() -> std::io::Result<()> {
         .collect();
 
 
-    let mut board = [[(' ', i32::max_value()); SIZE]; SIZE];
-    for (sign, (x, y)) in coords {
-        for (i, row) in board.iter_mut().enumerate() {
-            for (j, cell) in row.iter_mut().enumerate() {
-                let dist = (x - i as i32).abs() + (y - j as i32).abs();
+    let mut board = [[(' ', 0); SIZE]; SIZE];
 
-                if dist < cell.1 {
-                    cell.0 = sign;
-                    cell.1 = dist;
-                } else if dist == cell.1 {
-                    cell.0 = '.';
-                }
+    for (i, row) in board.iter_mut().enumerate() {
+        for (j, cell) in row.iter_mut().enumerate() {
+            for (sign, (x, y)) in coords.clone() {
+                let dist = (x - i as i32).abs() + (y - j as i32).abs();
+                cell.1 += dist;
             }
         }
     }
 
     for line in board.iter() {
         for char in line.iter() {
-            print!("{}", char.0);
+            if char.1 < 10000 {
+                print!("X");
+            } else {
+                print!(" ");
+            }
         }
         println!()
     }
 
-    let mut result = HashMap::new();
+    let mut result = 0;
 
     for (i, row) in board.iter_mut().enumerate() {
         for (j, cell) in row.iter_mut().enumerate() {
-            let count = result.entry(cell.0).or_insert(0);
-
-            if i == 0 || j == 0 || i == SIZE - 1 || j == SIZE - 1 {
-                *count = -1;
-            }
-
-            if *count > -1 {
-                *count += 1;
+            if cell.1 < 10000 {
+                result += 1;
             }
         }
     }
 
-    println!("Result: {:?}", result.into_iter().max_by_key(|(_, b)| *b).unwrap());
+    println!("Result: {:?}", result);
 
     Ok(())
 }
